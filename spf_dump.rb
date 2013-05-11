@@ -1,4 +1,7 @@
 #/usr/local/bin/ruby19
+#
+# This source is released under public domain and bsd licence
+#
 
 # https://github.com/nullstream/spf_dump
 
