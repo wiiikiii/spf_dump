@@ -1,15 +1,12 @@
 #/usr/local/bin/ruby19
-#
-# This source is released under public domain and bsd licence
-#
 
 # https://github.com/nullstream/spf_dump
 
 require "pp"
-# require 'ipaddr'
+require 'ipaddr'
 # IPAddr.new('192.168.0.1/24').to_range.each { |i| puts i};
 
-class  SPF
+class	SPF
 	def initialize( debug = false )
 		@debug = debug
 	end
@@ -18,7 +15,7 @@ class  SPF
 	end
 	def dig( domain, type )
 		log "*** dig #{domain} #{type} +short"
-		`dig #{domain} #{type} +short`
+		`dig #{domain} #{type} +short`.gsub( /\"/, '' )
 	end
 	def handle_a( ip )
 		log "* handle a for #{ip}"
@@ -37,20 +34,20 @@ class  SPF
 		record = dig( domain, 'txt' ).downcase
 		record.split.each do | token |
 			log "* found token #{token}"
-			token = token.split(/:/)
+			token = token.split(/:|=/)
 			if token.length == 2
 				case token.first
 				when 'ip4'
 					log "* scan ip4 #{token[1]}"
 					ranges.push( token[1] )
-				when 'a' 
-				 	log "* scan a #{token}"
+				when 'a'
+				 	log "* scan a #{token[1]}"
 					ranges.concat( handle_a( token[ 1 ] ) )
-				when 'mx' 
-					log "* scan mx #{token}"
+				when 'mx'
+					log "* scan mx #{token[1]}"
 					ranges.concat( handle_mx( token[ 1 ] ) )
-				when 'include', 'redirect' 
-					log "* scan include #{token}"
+				when 'include', 'redirect'
+					log "* scan include or redirect #{token[1]}"
 					ranges.concat( parse( token[ 1 ] ) )
 				else
 					log "* scan unknown #{token}"
@@ -64,6 +61,15 @@ class  SPF
 				when 'mx', '+mx'
 					log "* scan +mx for #{domain}"
 					ranges.concat( handle_mx( domain ) )
+				else
+					alt = token.first.split( /=/ )
+					case alt.first
+					when 'redirect'
+						log "* redirect for #{alt.last}"
+						ranges.concat( parse( alt.last ) )
+					else
+						log "** alt: " + token.first
+					end
 				end
 			end
 		end
@@ -75,3 +81,6 @@ end
 
 spf = SPF.new( false )
 puts spf.parse( ARGV.first ).uniq
+#spf.parse( ARGV.first ).uniq.each do | ip |
+#	IPAddr.new( ip ).to_range.each { |i| puts i };
+#end
