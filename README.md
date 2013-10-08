@@ -1,5 +1,5 @@
-spf_dump
-========
+spf_dump.rb
+===========
 
 instead of manually find all ips for domains MX records use spf_dump to find and dump them out
 
